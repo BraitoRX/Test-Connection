@@ -5,7 +5,7 @@ import paramiko
 
 
 hostname = "10.128.0.13"
-username = "BRAITO\brall"
+username = "brivera_procibernetica_com"
 key_filename = "claves/braito"
 
 
