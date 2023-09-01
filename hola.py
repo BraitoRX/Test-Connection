@@ -4,9 +4,9 @@ from google.cloud import compute_v1
 import paramiko
 
 
-hostname = "10.128.0.12"
-username = "brivera_procibernetica_com"
-key_filename = "./.ssh/id_rsa"
+hostname = ""
+username = "BRAITO\brall"
+key_filename = "C:/Users/brall/.ssh/google_compute_engine"
 
 
 commands = ["mkdir uwu"]
@@ -17,7 +17,7 @@ client = paramiko.SSHClient()
 
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 try:
-    client.connect(hostname=hostname, username=username, key_filename=key_filename)
+    client.connect(hostname=hostname,port=22, username=username, key_filename=key_filename)
 except Exception as e:
     print("[!] Cannot connect to the SSH Server")
     print(e)
