@@ -6,7 +6,7 @@ import paramiko
 
 hostname = ""
 username = "BRAITO\brall"
-key_filename = "C:/Users/brall/.ssh/google_compute_engine"
+key_filename = "claves/braito"
 
 
 commands = ["mkdir uwu"]
