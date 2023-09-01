@@ -4,7 +4,7 @@ from google.cloud import compute_v1
 import paramiko
 
 
-hostname = ""
+hostname = "10.128.0.13"
 username = "BRAITO\brall"
 key_filename = "claves/braito"
 
