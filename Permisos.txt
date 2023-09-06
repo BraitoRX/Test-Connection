@@ -1,0 +1,7 @@
+Permisos
+
+Cuenta de servicio para Cloud Function resize de disco:
+
+	compute.instances.setMetadata
+
+	
