@@ -1,4 +1,3 @@
-import functions_framework
 import argparse
 import logging
 import subprocess
@@ -14,15 +13,8 @@ SERVICE_ACCOUNT_METADATA_URL = (
 )
 HEADERS = {"Metadata-Flavor": "Google"}
 
-
-@functions_framework.http
-def hello_http(request):
-    account = main("ls -la", "analitica-demos", hostname="10.128.0.18")
-    print(account)
-
-
 def main(cmd, project, instance=None, zone=None,
-         oslogin=None, account=None, hostname=None, username=None):
+         oslogin=None, account=None, hostname=None, username=None,quantity=None):
     """Run a command on a remote system."""
 
     # Create the OS Login API object.
@@ -40,8 +32,9 @@ def main(cmd, project, instance=None, zone=None,
     # Using the OS Login API, get the POSIX user name from the login profile
     # for the service account.
     profile = oslogin.users().getLoginProfile(name=account).execute()
+    
     username = username or profile.get('posixAccounts')[0].get('username')
-
+    print(username)
     # Create the hostname of the target instance using the instance name,
     # the zone where the instance is located, and the project that owns the
     # instance.
