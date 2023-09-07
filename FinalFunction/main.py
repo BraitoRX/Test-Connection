@@ -23,9 +23,13 @@ def hello_pubsub(cloud_event):
         instance_details = get_instance_details(project_id, instance_id, zona)
         response = compute_v1.Instance.to_json(instance_details)
         response = json.loads(response)
-
+        diskName = ""
+        disk_size_gb = 0
         internalIP = response["networkInterfaces"][0]["networkIP"]
-        diskName = response["name"]
+        for disk in response.get("disks", []):
+            if disk["deviceName"] == response["name"]:
+                disk_size_gb = disk.get("diskSizeGb")
+                diskName = disk["deviceName"]
 
         # getting the credentials and project details for gcp project
         credentials, your_project_id = google.auth.default(
@@ -40,17 +44,24 @@ def hello_pubsub(cloud_event):
             "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json",
         }
-        payload = {"sizeGb": "11"}
+
+        payload = {"sizeGb": str(round(int(disk_size_gb) * (1.1)))}
+        newSize = payload["sizeGb"]
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if response.status_code == 200:
-            data = response.json()
             print("Request successful")
-            print(data)
+            cn.main(
+                [
+                    f"echo `Se redimensionó el disco {diskName} con {disk_size_gb} a {newSize} correctamente`",
+                    "mkdir prueba"
+                ],
+                project_id,
+                hostname=internalIP,
+            )
         else:
             print(f"Request failed with status code {response.status_code}")
             print(response.text)
 
-        cn.main("mkdir hola-mundo", project_id, hostname=internalIP)
     except json.JSONDecodeError as e:
         print(f"Error al decodificar los datos JSON: {e}")
 

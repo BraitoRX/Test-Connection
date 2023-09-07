@@ -13,7 +13,7 @@ SERVICE_ACCOUNT_METADATA_URL = (
 )
 HEADERS = {"Metadata-Flavor": "Google"}
 
-def main(cmd, project, instance=None, zone=None,
+def main(cmds, project, instance=None, zone=None,
          oslogin=None, account=None, hostname=None, username=None,quantity=None):
     """Run a command on a remote system."""
 
@@ -42,7 +42,8 @@ def main(cmd, project, instance=None, zone=None,
         instance=instance, zone=zone, project=project)
 
     # Run a command on the remote instance over SSH.
-    result = run_ssh(cmd, private_key_file, username, hostname)
+    for i in cmds:
+        result = run_ssh(i, private_key_file, username, hostname)
 
     # Print the command line output from the remote instance.
     # Use .rstrip() rather than end='' for Python 2 compatability.
