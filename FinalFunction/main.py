@@ -54,6 +54,8 @@ def hello_pubsub(cloud_event):
                 [
                     f"echo `Se redimensionó el disco {diskName} con {disk_size_gb} a {newSize} correctamente`",
                     "echo -e 'resizepart\nFix\n1\nYes\n100%\nquit' | sudo parted /dev/sda ---pretend-input-tty",
+                    "sudo partprobe /dev/sda",
+                    "sudo resize2fs /dev/sda1"
                 ],
                 project_id,
                 hostname=internalIP,
