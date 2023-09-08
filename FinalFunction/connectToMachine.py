@@ -42,8 +42,8 @@ def main(cmds, project, instance=None, zone=None,
         instance=instance, zone=zone, project=project)
 
     # Run a command on the remote instance over SSH.
-    for i in cmds:
-        result = run_ssh(i, private_key_file, username, hostname)
+    
+    result = run_ssh(cmds, private_key_file, username, hostname)
 
     # Print the command line output from the remote instance.
     # Use .rstrip() rather than end='' for Python 2 compatability.
@@ -90,12 +90,12 @@ def execute(cmd, cwd=None, capture_output=False, env=None, raise_errors=True):
         logging.info(output)
     return returncode, output
 
-def run_ssh(cmd, private_key_file, username, hostname):
+def run_ssh(cmds, private_key_file, username, hostname):
     """Run a command on a remote system."""
     ssh_command = [
         'ssh', '-i', private_key_file, '-o', 'StrictHostKeyChecking=no',
         '{username}@{hostname}'.format(username=username, hostname=hostname),
-        cmd,
+        ';'.join(cmds),
     ]
     ssh = subprocess.Popen(
         ssh_command, shell=False, stdout=subprocess.PIPE,

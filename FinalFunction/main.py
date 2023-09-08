@@ -44,8 +44,8 @@ def hello_pubsub(cloud_event):
             "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json",
         }
-
-        payload = {"sizeGb": str(round(int(disk_size_gb) * (1.1)))}
+        porcentaje = 0.1
+        payload = {"sizeGb": str(round(int(disk_size_gb) * (1 + porcentaje)))}
         newSize = payload["sizeGb"]
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if response.status_code == 200:
@@ -53,7 +53,7 @@ def hello_pubsub(cloud_event):
             cn.main(
                 [
                     f"echo `Se redimensionó el disco {diskName} con {disk_size_gb} a {newSize} correctamente`",
-                    "mkdir prueba"
+                    "echo -e 'resizepart\nFix\n1\nYes\n100%\nquit' | sudo parted /dev/sda ---pretend-input-tty",
                 ],
                 project_id,
                 hostname=internalIP,

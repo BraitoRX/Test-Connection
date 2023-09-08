@@ -1,0 +1,1 @@
+Permisos SA para la cloud function
