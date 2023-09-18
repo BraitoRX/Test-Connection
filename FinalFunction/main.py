@@ -9,12 +9,9 @@ import google.auth.transport.requests
 import requests
 
 
-# Triggered from a message on a Cloud Pub/Sub topic.
 @functions_framework.cloud_event
 def hello_pubsub(cloud_event):
-    # Print out the data from Pub/Sub, to prove that it worked
     pubsub_data = base64.b64decode(cloud_event.data["message"]["data"])
-    # Convertir los datos decodificados en un objeto JSON
     try:
         json_data = json.loads(pubsub_data.decode("utf-8"))
         instance_id = json_data["incident"]["resource"]["labels"]["instance_id"]
@@ -31,7 +28,6 @@ def hello_pubsub(cloud_event):
                 disk_size_gb = disk.get("diskSizeGb")
                 diskName = disk["deviceName"]
 
-        # getting the credentials and project details for gcp project
         credentials, your_project_id = google.auth.default(
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
         )
@@ -55,7 +51,7 @@ def hello_pubsub(cloud_event):
                     f"echo `Se redimensionó el disco {diskName} con {disk_size_gb} a {newSize} correctamente`",
                     "echo -e 'resizepart\nFix\n1\nYes\n100%\nquit' | sudo parted /dev/sda ---pretend-input-tty",
                     "sudo partprobe /dev/sda",
-                    "sudo resize2fs /dev/sda1"
+                    "sudo resize2fs /dev/sda1",
                 ],
                 project_id,
                 hostname=internalIP,
