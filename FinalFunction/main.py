@@ -7,10 +7,11 @@ from google.cloud import compute_v1
 import google.auth
 import google.auth.transport.requests
 import requests
+import math
 
 
 @functions_framework.cloud_event
-def hello_pubsub(cloud_event):
+def disk_resize(cloud_event):
     pubsub_data = base64.b64decode(cloud_event.data["message"]["data"])
     try:
         json_data = json.loads(pubsub_data.decode("utf-8"))
@@ -31,6 +32,11 @@ def hello_pubsub(cloud_event):
         credentials, your_project_id = google.auth.default(
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
         )
+        disk_size_gb = int(disk_size_gb)
+        threshold_value = float(
+            json_data["incident"]["condition"]["conditionThreshold"]["thresholdValue"]
+        )
+        observerd_value = float(json_data["incident"]["observed_value"])
 
         auth_req = google.auth.transport.requests.Request()
         credentials.refresh(auth_req)
@@ -40,18 +46,28 @@ def hello_pubsub(cloud_event):
             "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json",
         }
-        porcentaje = 0.1
-        payload = {"sizeGb": str(round(int(disk_size_gb) * (1 + porcentaje)))}
+
+        print(f"threshold_value: {threshold_value}")
+        print(f"observerd_value: {observerd_value}")
+        print(f"disk_size_gb: { disk_size_gb}")
+        porcentaje = 10
+        b = observerd_value / 100
+        c = (threshold_value+porcentaje) / 100
+        a = disk_size_gb
+        x = (c * a - b * a) / (1 - c)
+        final_value = math.ceil(disk_size_gb + x)
+        print(f"final_value: {final_value}")
+        payload = {"sizeGb": str(final_value)}
         newSize = payload["sizeGb"]
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if response.status_code == 200:
             print("Request successful")
             cn.main(
                 [
-                    f"echo `Se redimensionó el disco {diskName} con {disk_size_gb} a {newSize} correctamente`",
                     "echo -e 'resizepart\nFix\n1\nYes\n100%\nquit' | sudo parted /dev/sda ---pretend-input-tty",
                     "sudo partprobe /dev/sda",
                     "sudo resize2fs /dev/sda1",
+                    f"echo 'Se redimensionó el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente, quedando con un porcentaje de {threshold_value+porcentaje}% de espacio disponible'",
                 ],
                 project_id,
                 hostname=internalIP,
