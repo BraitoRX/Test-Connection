@@ -1,1 +1,14 @@
 Permisos SA para la cloud function
+
+otros proyectos que son consumidos por la cloud function, esto según el punto de vista de la cloud function.
+Compute Admin
+Service Account User
+
+vpc serverless connector
+Activar use serverless vpc connector al proyecto base.
+
+enable OS login
+para que pueda entrar en las máquinas.
+
+
+

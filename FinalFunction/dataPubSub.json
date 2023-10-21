@@ -11,7 +11,7 @@
              "comparison":"COMPARISON_LT",
              "duration":"120s",
              "filter":"resource.type = \"gce_instance\" AND metric.type = \"agent.googleapis.com/disk/percent_used\" AND (metric.labels.device = \"/dev/sda1\" AND metric.labels.state = \"free\") AND metadata.system_labels.name = \"maquina-agente-vm-disk\"",
-             "thresholdValue":10,
+             "thresholdValue":20,
              "trigger":{
                 "count":1
              }
@@ -33,12 +33,12 @@
           "labels":{},
           "type":"agent.googleapis.com/disk/percent_used"
        },
-       "observed_value":"6.891",
+       "observed_value":"19",
        "policy_name":"prueba de disco",
        "resource":{
           "labels":{
-             "instance_id":"7162207394860725366",
-             "project_id":"analitica-demos",
+             "instance_id":"5425842027954303181",
+             "project_id":"inteligencia-artificial-395920",
              "zone":"us-central1-a"
           },
           "type":"gce_instance"
@@ -52,7 +52,7 @@
        "started_at":1693970239,
        "state":"open",
        "summary":"Disk utilization for analitica-demos maquina-agente-vm-disk with system labels {name=maquina-agente-vm-disk} is below the threshold of 10.000 with a value of 6.891.",
-       "threshold_value":"10",
+       "threshold_value":"20",
        "url":"https://console.cloud.google.com/monitoring/alerting/incidents/0.n1voad4b7bb4?project=analitica-demos"
     },
     "version":"1.2"
