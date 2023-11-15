@@ -1,0 +1,5 @@
+- Validar si funciona para más particiones que también son raíz.
+- Mandar una alerta en caso de que la CF falle en el redimensionamiento.
+- Activar en tres instancias específicas.
+	- IP-VOZYGO-1 ... 3
+- Utilizar las mismas alarmas de uso.
