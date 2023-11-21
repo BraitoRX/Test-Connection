@@ -8,6 +8,11 @@ import google.auth
 import google.auth.transport.requests
 import requests
 import math
+import publicatePubSubAlert as pp
+
+project_id_host = "analitica-demos"
+error_topic_id = "error-cf-resize-disk"
+
 
 @functions_framework.cloud_event
 def disk_resize(cloud_event):
@@ -31,6 +36,7 @@ def disk_resize(cloud_event):
     """
     # Decodificación de los datos recibidos en el mensaje de Pub/Sub
     pubsub_data = base64.b64decode(cloud_event.data["message"]["data"])
+
     try:
         rootPartition_by_interface = {
             "SCSI": "/dev/sda",
@@ -67,16 +73,18 @@ def disk_resize(cloud_event):
             if type_disk != None and type_disk == "root":
                 type_partition = disk.get('interface')
                 if type_partition == None:
-                    raise Exception("No se encontró el tipo de interfaz del disco")
+                    report_error(f"no se encuentra el tipo de interfaz de disco para el disco {disk['deviceName']}",instance_id,project_id,zona,partitionX)
                 root = rootPartition_by_interface.get(type_partition)
+                if root == None:
+                    report_error(f"El tipo de interfaz de disco no está admitida! solo SCSI y NVME se encontró {type_partition}",instance_id,project_id,zona,partitionX)
                 print(f"Root: {root}")
                 disk_size_gb = disk.get("diskSizeGb")
                 diskName = disk["deviceName"]
+                break
 
 
         if diskName == "":
-            print("No se encontró el disco de la instancia")
-            raise Exception("No se encontró el disco de la instancia")
+            report_error("Es posible que la máquina virtual no tenga etiquetado el disco raíz con la etiqueta type:root o que no haya disco raíz",instance_id,project_id,zona,partitionX)
 
         print(f"Disco de la instancia: {diskName}")
         # Autenticación y preparación para realizar la solicitud de cambio de tamaño del disco
@@ -132,10 +140,16 @@ def disk_resize(cloud_event):
             # Si la solicitud falla, se imprimen mensajes de error
             print(f"Request failed with status code {response.status_code}")
             print(response.text)
+            report_error(f"No se pudo redimensionar el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente debido a: {response.text}",instance_id,project_id,zona,partitionX)
 
     except json.JSONDecodeError as e:
         # Manejo de errores en la decodificación de JSON
         print(f"Error al decodificar los datos JSON: {e}")
+        report_error(f"Error al decodificar los datos JSON: {e}",instance_id,project_id,zona,partitionX)
+
+def report_error(error:str,instancia,project, zona, partition):
+    pp.publish_error(error,project_id_host,error_topic_id,instancia,project,zona,partition)
+    raise Exception(error)
 
 def get_instance_details(project_id: str, instance_id: str, zone: str) -> dict:
     """

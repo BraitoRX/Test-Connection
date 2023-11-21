@@ -29,7 +29,7 @@
     "metric": {
       "displayName": "Disk utilization",
       "labels": {
-        "device": "/dev/nvme0n1p1"
+        "device": "/dev/sda1"
       },
       "type": "agent.googleapis.com/disk/percent_used"
     },
@@ -37,7 +37,7 @@
     "policy_name": "prueba de disco",
     "resource": {
       "labels": {
-        "instance_id": "5198875383146608251",
+        "instance_id": "6370317005776793683",
         "project_id": "analitica-demos",
         "zone": "us-central1-a"
       },
