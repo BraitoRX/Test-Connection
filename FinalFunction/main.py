@@ -64,7 +64,9 @@ def disk_resize(cloud_event):
         print(f"JSON: {json_data}")
         print(f"response {response}")
         for disk in response.get("disks", []):
-            diska= get_disk_details (project_id, disk["deviceName"], zona)
+            url = disk["source"] 
+            extracted_value = url.split("/")[-1]
+            diska= get_disk_details (project_id,extracted_value, zona,instance_id,partitionX)
             response_disk = compute_v1.Disk.to_json(diska)
             response_disk = json.loads(response_disk)
             print(f"Disco: {response_disk}")
@@ -84,7 +86,7 @@ def disk_resize(cloud_event):
 
 
         if diskName == "":
-            report_error("Es posible que la máquina virtual no tenga etiquetado el disco raíz con la etiqueta type:root o que no haya disco raíz",instance_id,project_id,zona,partitionX)
+            report_error("Falló la CF de redimensionamiento de disco, revisar las restricciones de etiquetado o partición secundaria detectada.",instance_id,project_id,zona,partitionX)
 
         print(f"Disco de la instancia: {diskName}")
         # Autenticación y preparación para realizar la solicitud de cambio de tamaño del disco
@@ -184,7 +186,7 @@ def get_instance_details(project_id: str, instance_id: str, zone: str) -> dict:
         print(f"Error fetching instance details: {e}")
         return {}
 
-def get_disk_details(project_id: str, disk_name: str, zone: str) -> dict:
+def get_disk_details(project_id: str, disk_name: str, zone: str,instance_id_: str,partitionXx: str) -> dict:	
     # Cliente de la API de Compute Engine para discos
     disk_client = compute_v1.DisksClient()
     # Creación de la solicitud para obtener detalles del disco
@@ -200,4 +202,5 @@ def get_disk_details(project_id: str, disk_name: str, zone: str) -> dict:
     except Exception as e:
         # Manejo de errores al obtener detalles del disco
         print(f"Error fetching disk details: {e}")
+        report_error(f"Error fetching disk details: {e}",instance_id_,project_id,zone,partitionXx)
         return {}
