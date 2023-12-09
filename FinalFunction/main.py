@@ -8,10 +8,8 @@ import google.auth
 import google.auth.transport.requests
 import requests
 import math
-import publicatePubSubAlert as pp
 
 project_id_host = "analitica-demos"
-error_topic_id = "error-cf-resize-disk"
 
 
 @functions_framework.cloud_event
@@ -40,7 +38,8 @@ def disk_resize(cloud_event):
     try:
         rootPartition_by_interface = {
             "SCSI": "/dev/sda",
-            "NVME": "/dev/nvme0n1"
+            "NVME": "/dev/nvme0n1",
+            "KAZOO": "/dev/nvme0n2"
         }
         # Carga de los datos decodificados como un objeto JSON
         json_data = json.loads(pubsub_data.decode("utf-8"))
@@ -52,6 +51,7 @@ def disk_resize(cloud_event):
         instance_details = get_instance_details(project_id, instance_id, zona)
         # Conversión de la instancia de detalles a JSON y posteriormente a objeto para su manipulación
         response = compute_v1.Instance.to_json(instance_details)
+        
         response = json.loads(response)
         # Inicialización de variables para almacenar el nombre y tamaño del disco
         diskName = ""
@@ -60,6 +60,17 @@ def disk_resize(cloud_event):
         internalIP = response["networkInterfaces"][0]["networkIP"]
         # Búsqueda del disco que coincide con el nombre de la instancia para obtener su tamaño actual
         partitionX = json_data["incident"]["metric"]["labels"]["device"]
+        labels = response["labels"]
+
+        isKazoo = False 
+        for label in labels:
+            if label == "type" and labels[label] == "kazoo":
+                isKazoo = True
+                break
+
+
+
+        
         print(f"Partición: {partitionX}")
         print(f"JSON: {json_data}")
         print(f"response {response}")
@@ -72,21 +83,26 @@ def disk_resize(cloud_event):
             print(f"Disco: {response_disk}")
             type_disk = response_disk["labels"].get("type")
             print(f"Tipo de disco: {type_disk}")
-            if type_disk != None and type_disk == "root":
+            if type_disk != None and type_disk == "root" and partitionX != "/dev/nvme0n2p1":
                 type_partition = disk.get('interface')
                 if type_partition == None:
-                    report_error(f"no se encuentra el tipo de interfaz de disco para el disco {disk['deviceName']}",instance_id,project_id,zona,partitionX)
+                    report_error(f"no se encuentra el tipo de interfaz de disco para el disco {disk['deviceName']}",project_id, instance_id, zona, partitionX)
                 root = rootPartition_by_interface.get(type_partition)
                 if root == None:
-                    report_error(f"El tipo de interfaz de disco no está admitida! solo SCSI y NVME se encontró {type_partition}",instance_id,project_id,zona,partitionX)
+                    report_error(f"El tipo de interfaz de disco no está admitida! solo SCSI y NVME se encontró {type_partition}",project_id, instance_id, zona, partitionX)
                 print(f"Root: {root}")
                 disk_size_gb = disk.get("diskSizeGb")
                 diskName = disk["deviceName"]
                 break
+            elif type_disk == "kazoo" and isKazoo:
+                disk_size_gb = disk.get("diskSizeGb")
+                diskName = disk["deviceName"]
+                root = rootPartition_by_interface.get("KAZOO")
+                break
 
 
         if diskName == "":
-            report_error("Falló la CF de redimensionamiento de disco, revisar las restricciones de etiquetado o partición secundaria detectada.",instance_id,project_id,zona,partitionX)
+            report_error("Falló la CF de redimensionamiento de disco, revisar las restricciones de etiquetado o partición secundaria detectada.",project_id, instance_id, zona, partitionX)
 
         print(f"Disco de la instancia: {diskName}")
         # Autenticación y preparación para realizar la solicitud de cambio de tamaño del disco
@@ -118,6 +134,9 @@ def disk_resize(cloud_event):
         a = disk_size_gb
         x = (c * a - b * a) / (1 - c)
         final_value = math.ceil(disk_size_gb + x)
+
+        if isKazoo:
+            final_value = disk_size_gb + 200
         
         # Creación del cuerpo de la solicitud con el nuevo tamaño del disco
         payload = {"sizeGb": str(final_value)}
@@ -133,7 +152,7 @@ def disk_resize(cloud_event):
                     f"echo -e 'resizepart\nfix\n1\nYes\n100%\nquit' | sudo parted {root} ---pretend-input-tty",
                     f"sudo partprobe {root}",
                     f"sudo resize2fs {partitionX}",
-                    f"echo 'Se redimensionó el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente, quedando con un porcentaje de {100-threshold_value + porcentaje}% de espacio disponible'",
+                    f"echo 'Se redimensionó el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente'",
                 ],
                 project_id,
                 hostname=internalIP,
@@ -142,16 +161,15 @@ def disk_resize(cloud_event):
             # Si la solicitud falla, se imprimen mensajes de error
             print(f"Request failed with status code {response.status_code}")
             print(response.text)
-            report_error(f"No se pudo redimensionar el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente debido a: {response.text}",instance_id,project_id,zona,partitionX)
+            report_error(f"No se pudo redimensionar el disco {diskName} de {disk_size_gb} GB a {newSize} GB correctamente debido a: {response.text}",project_id, instance_id, zona, partitionX)
 
     except json.JSONDecodeError as e:
         # Manejo de errores en la decodificación de JSON
         print(f"Error al decodificar los datos JSON: {e}")
-        report_error(f"Error al decodificar los datos JSON: {e}",instance_id,project_id,zona,partitionX)
+        report_error(f"Error al decodificar los datos JSON: {e}",project_id, instance_id, zona, partitionX)
 
-def report_error(error:str,instancia,project, zona, partition):
-    pp.publish_error(error,project_id_host,error_topic_id,instancia,project,zona,partition)
-    raise Exception(error)
+def report_error(error:str,project_id:str, instance_id:str, zone:str, partitionX:str):
+    raise Exception("Cloud Function Disk Resize Error|"+error+"|"+project_id+"|"+instance_id+"|"+zone+"|"+partitionX)
 
 def get_instance_details(project_id: str, instance_id: str, zone: str) -> dict:
     """
@@ -202,5 +220,5 @@ def get_disk_details(project_id: str, disk_name: str, zone: str,instance_id_: st
     except Exception as e:
         # Manejo de errores al obtener detalles del disco
         print(f"Error fetching disk details: {e}")
-        report_error(f"Error fetching disk details: {e}",instance_id_,project_id,zone,partitionXx)
+        report_error(f"Error fetching disk details: {e}",project_id, instance_id_, zone, partitionXx)
         return {}
