@@ -68,14 +68,13 @@ def disk_resize(cloud_event):
                 isKazoo = True
                 break
 
-
-
         
         print(f"Partición: {partitionX}")
         print(f"JSON: {json_data}")
         print(f"response {response}")
         for disk in response.get("disks", []):
             url = disk["source"] 
+            isRoot = disk["boot"]
             extracted_value = url.split("/")[-1]
             diska= get_disk_details (project_id,extracted_value, zona,instance_id,partitionX)
             response_disk = compute_v1.Disk.to_json(diska)
@@ -83,7 +82,7 @@ def disk_resize(cloud_event):
             print(f"Disco: {response_disk}")
             type_disk = response_disk["labels"].get("type")
             print(f"Tipo de disco: {type_disk}")
-            if type_disk != None and type_disk == "root" and partitionX != "/dev/nvme0n2p1":
+            if  isRoot and partitionX != "/dev/nvme0n2p1":
                 type_partition = disk.get('interface')
                 if type_partition == None:
                     report_error(f"no se encuentra el tipo de interfaz de disco para el disco {disk['deviceName']}",project_id, instance_id, zona, partitionX)
@@ -102,7 +101,7 @@ def disk_resize(cloud_event):
 
 
         if diskName == "":
-            report_error("Falló la CF de redimensionamiento de disco, revisar las restricciones de etiquetado o partición secundaria detectada.",project_id, instance_id, zona, partitionX)
+            report_error("Falló la CF de redimensionamiento de disco, disco no encontrado",project_id, instance_id, zona, partitionX)
 
         print(f"Disco de la instancia: {diskName}")
         # Autenticación y preparación para realizar la solicitud de cambio de tamaño del disco
@@ -135,7 +134,7 @@ def disk_resize(cloud_event):
         x = (c * a - b * a) / (1 - c)
         final_value = math.ceil(disk_size_gb + x)
 
-        if isKazoo:
+        if isKazoo and partitionX != "/dev/nvme0n2p1":
             final_value = disk_size_gb + 200
         
         # Creación del cuerpo de la solicitud con el nuevo tamaño del disco
