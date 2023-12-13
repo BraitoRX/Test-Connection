@@ -9,8 +9,6 @@ import google.auth.transport.requests
 import requests
 import math
 
-project_id_host = "analitica-demos"
-
 
 @functions_framework.cloud_event
 def disk_resize(cloud_event):
@@ -161,7 +159,6 @@ def disk_resize(cloud_event):
             print(f"Request failed with status code {response.status_code}")
             print(response.text)
             report_error(f"No se pudo redimensionar el disco {DISK_RESIZE} de {disk_size_gb} GB a {newSize} GB correctamente debido a: {response.text}",project_id, instance_id, zona, partitionX)
-
     except json.JSONDecodeError as e:
         # Manejo de errores en la decodificación de JSON
         print(f"Error al decodificar los datos JSON: {e}")
