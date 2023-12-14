@@ -8,6 +8,7 @@ vpc serverless connector
 Activar use serverless vpc connector al proyecto base.
 
 enable OS login
+enable-oslogin	true
 para que pueda entrar en las máquinas.
 
 

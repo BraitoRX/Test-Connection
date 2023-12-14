@@ -14,7 +14,7 @@ SERVICE_ACCOUNT_METADATA_URL = (
 )
 HEADERS = {"Metadata-Flavor": "Google"}
 
-def main(cmds, project, instance=None, zone=None,
+def main(cmds, project, instance, zone,
          oslogin=None, account=None, hostname=None, username=None,quantity=None):
     """
     Ejecuta un comando en un sistema remoto.
@@ -47,12 +47,8 @@ def main(cmds, project, instance=None, zone=None,
     profile = oslogin.users().getLoginProfile(name=account).execute()
     username = username or profile.get('posixAccounts')[0].get('username')
     
-    # Crear el nombre de host de la instancia objetivo usando el nombre de la instancia, la zona y el proyecto.
-    hostname = hostname or '{instance}.{zone}.c.{project}.internal'.format(
-        instance=instance, zone=zone, project=project)
-
     # Ejecutar un comando en la instancia remota a través de SSH.
-    result = run_ssh(cmds, private_key_file, username, hostname)
+    result = run_ssh(cmds, private_key_file, username, hostname,project, instance, zone, "")
 
     # Imprimir la salida de la línea de comandos de la instancia remota.
     for line in result:
@@ -127,7 +123,7 @@ def execute(cmd, cwd=None, capture_output=False, env=None, raise_errors=True):
         logging.info(output)
     return returncode, output
 
-def run_ssh(cmds, private_key_file, username, hostname):
+def run_ssh(cmds, private_key_file, username, hostname,project_id, instance_id, zone, partitionX):
     """
     Ejecuta un comando en un sistema remoto a través de SSH.
 
@@ -153,3 +149,6 @@ def run_ssh(cmds, private_key_file, username, hostname):
         stderr=subprocess.PIPE)
     result = ssh.stdout.readlines()
     return result if result else ssh.stderr.readlines()
+
+def report_error(error:str,project_id:str, instance_id:str, zone:str, partitionX:str):
+    raise Exception("Cloud Function Disk Resize Error| Project: "+project_id+"| Instance ID: "+instance_id+"| Zone: "+zone+"| Partition: "+partitionX+"| error |"+error+"|")
