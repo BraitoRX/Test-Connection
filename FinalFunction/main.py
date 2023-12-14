@@ -165,7 +165,7 @@ def disk_resize(cloud_event):
         report_error(f"Error al decodificar los datos JSON: {e}",project_id, instance_id, zona, partitionX)
 
 def report_error(error:str,project_id:str, instance_id:str, zone:str, partitionX:str):
-    raise Exception("Cloud Function Disk Resize Error|"+error+"|"+project_id+"|"+instance_id+"|"+zone+"|"+partitionX)
+    raise Exception("Cloud Function Disk Resize Error|"+project_id+"|"+instance_id+"|"+zone+"|"+partitionX+"|error|"+error+"|")
 
 def get_instance_details(project_id: str, instance_id: str, zone: str) -> dict:
     """
